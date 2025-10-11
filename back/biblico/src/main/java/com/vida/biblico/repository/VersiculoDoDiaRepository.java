@@ -17,7 +17,7 @@ public interface VersiculoDoDiaRepository extends JpaRepository<VersiculoDoDia, 
     // Método para verificar se já existe um versículo para a data
     boolean existsByDataSelecao(LocalDate dataSelecao);
 
-
+    Optional<VersiculoDoDia> findTopByOrderByIdDesc();
 
 
 }

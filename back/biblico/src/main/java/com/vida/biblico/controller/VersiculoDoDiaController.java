@@ -3,6 +3,7 @@ package com.vida.biblico.controller;
 import com.vida.biblico.dto.VersiculoDoDiaDTO;
 import com.vida.biblico.entity.VersiculoDoDia;
 import com.vida.biblico.entity.Verso;
+import com.vida.biblico.exception.ResourceNotFoundException;
 import com.vida.biblico.service.VersiculoDoDiaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,4 +52,18 @@ public class VersiculoDoDiaController {
             return ResponseEntity.internalServerError().build();
         }
     }
-}
+
+
+    @GetMapping("/ultimo")
+    public ResponseEntity<VersiculoDoDiaDTO> getUltimoVersiculo() {
+        try {
+            VersiculoDoDiaDTO dto = service.getUltimoVersiculo();
+            return ResponseEntity.ok(dto);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+} // 👈 fecha a classe VersiculoDoDiaController
+

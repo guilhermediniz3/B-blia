@@ -3,6 +3,7 @@ package com.vida.biblico.service;
 import com.vida.biblico.dto.VersiculoDoDiaDTO;
 import com.vida.biblico.entity.Verso;
 import com.vida.biblico.entity.VersiculoDoDia;
+import com.vida.biblico.exception.ResourceNotFoundException;
 import com.vida.biblico.repository.VersoRepository;
 import com.vida.biblico.repository.VersiculoDoDiaRepository;
 
@@ -119,4 +120,13 @@ public class VersiculoDoDiaService {
 
         return versiculoDoDiaRepository.save(versiculo);
     }
-}
+
+
+    public VersiculoDoDiaDTO getUltimoVersiculo() {
+        VersiculoDoDia ultimo = versiculoDoDiaRepository.findTopByOrderByIdDesc()
+                .orElseThrow(() -> new ResourceNotFoundException("Nenhum versículo encontrado."));
+        return new VersiculoDoDiaDTO(ultimo);
+    }
+
+
+ }

@@ -3,66 +3,79 @@ import { Container, Card, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 
 // -----------------------------------------------------------
-// 1. Tipagem (Interface)
+// 1. Tipagem (Interface) - Estrutura Fiel ao DTO completo
 // -----------------------------------------------------------
-interface Verso {
-  id: number; // <--- ESTE DEVE SER O ID DO REGISTRO NA TABELA VersiculoDoDia (ex: 4)
-  favorito: boolean;
-  texto: string;
-  livro: {
+interface Livro {
     nome: string;
-  };
-  capitulo: number;
-  versiculo: number;
-  referencia?: string; 
+}
+
+interface VersoDetalhe {
+    id: number; // Este é o ID do Verso Bíblico (Ex: 21453)
+    texto: string;
+    livro: Livro;
+    capitulo: number;
+    versiculo: number;
+}
+
+interface VersiculoDoDiaDTO {
+    id: number; // ESTE é o ID do Registro Diário (Ex: 4) - O ID CORRETO PARA O PATCH
+    favorito: boolean;
+    verso: VersoDetalhe;
+    dataSelecao: string;
 }
 
 // -----------------------------------------------------------
-// 2. Constantes de Estilo
+// 2. Constantes de Endpoints e Estilo
 // -----------------------------------------------------------
 const LAGOINHA_BLUE = '#42a5f5'; 
 
+// Endpoints: Usamos a rota '/ultimo' como a fonte primária de dados completos
+const URL_GET_DADOS_COMPLETOS = `/api/versiculo-do-dia/ultimo`;
+// Endpoint base para o PATCH (precisa do ID anexado)
+const URL_PATCH_BASE = `/api/versiculo-do-dia/`; 
+
 const verseCardStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderLeft: `5px solid ${LAGOINHA_BLUE}`, 
-  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
+  backgroundColor: 'white',
+  borderLeft: `5px solid ${LAGOINHA_BLUE}`, 
+  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
 };
 
 // -----------------------------------------------------------
 // 3. Componentes SVG NATIVOS
 // -----------------------------------------------------------
 
+// NOVO ÍCONE: Livro Aberto com marcador de página (Book Open, conforme solicitado)
 const BookIcon = ({ size = 24, color = 'currentColor', className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20c-5.5-2.5-7.5-3.5-9.5-3.5C8 18.5 4 20 4 20s2.5-3 2.5-3H4.5A2.5 2.5 0 0 1 2 14.5v-10A2.5 2.5 0 0 1 4.5 2z" />
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
     </svg>
 );
 
 const ClipboardIcon = ({ size = 16, color = 'currentColor', onClick, style }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" onClick={onClick} style={{...style, cursor: 'pointer'}}>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" onClick={onClick} style={{...style, cursor: 'pointer'}}>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    </svg>
 );
 
 const HeartIcon = ({ size = 18, isFilled = false, color = 'currentColor', onClick, title, style }) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width={size} 
-        height={size} 
-        viewBox="0 0 24 24" 
-        fill={isFilled ? color : 'none'} 
-        stroke={color} 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        onClick={onClick}
-        title={title}
-        style={{...style, cursor: 'pointer', transition: 'color 0.2s' }}
-    >
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.87 0-3.6 1.05-4.5 2.5a5.5 5.5 0 0 0-9 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
-    </svg>
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill={isFilled ? color : 'none'} 
+        stroke={color} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        onClick={onClick}
+        title={title}
+        style={{...style, cursor: 'pointer', transition: 'color 0.2s' }}
+    >
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.87 0-3.6 1.05-4.5 2.5a5.5 5.5 0 0 0-9 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
+    </svg>
 );
 
 
@@ -70,61 +83,74 @@ const HeartIcon = ({ size = 18, isFilled = false, color = 'currentColor', onClic
 // 4. Componente Sidebar
 // -----------------------------------------------------------
 const Sidebar: React.FC = () => {
-  const [versiculo, setVersiculo] = useState<Verso | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [isFavorito, setIsFavorito] = useState<boolean>(false);
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [versiculoDoDia, setVersiculoDoDia] = useState<VersiculoDoDiaDTO | null>(null); 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [isFavorito, setIsFavorito] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-  useEffect(() => {
-    const buscarVersiculoDia = async() =>{
-      try{
-        setError(null);
-        setIsLoading(true); 
-        
-        const response = await axios.get<Verso>('/api/versiculo-do-dia');
-        const data = response.data;
-        
-        // CORREÇÃO CRÍTICA DO ID NO FRONTEND:
-        // Como o seu backend envia o ID do Verso Bíblico (21453) no campo 'id' 
-        // e o PATCH espera o ID primário do registro (4), nós forçamos a correção aqui.
-        // O valor 4 é baseado na imagem da sua tabela.
-        const idRegistroCorreto = 4; // <--- VALOR FIXO DO ID PRIMÁRIO DA TABELA VersiculoDoDia
-        
-        const correctedData: Verso = {
-            ...data,
-            id: idRegistroCorreto // Sobrescrevemos o ID incorreto com o valor esperado (4)
-        };
-        
-        setVersiculo(correctedData);
-        if (correctedData && typeof correctedData.favorito === 'boolean') {
-            setIsFavorito(correctedData.favorito);
-        }
-        
-        console.log("ID usado para o PATCH (corrigido para o ID primário):", correctedData.id);
+  // EFEITO: Busca todos os dados em uma única chamada
+  useEffect(() => {
+    const buscarVersiculoDia = async() =>{
+      setIsLoading(true); 
+      setError(null);
+      
+      try {
+        console.log(`Tentando GET para DTO completo: ${URL_GET_DADOS_COMPLETOS}`);
+        
+        // 1. AXIOS.GET para buscar o DTO completo na nova rota
+        const response = await axios.get<VersiculoDoDiaDTO>(URL_GET_DADOS_COMPLETOS);
+        const data = response.data;
+        
+        console.log("Resposta JSON do backend (para debug):", data); 
 
-      } catch (err){
-        console.error("Erro ao buscar versículo:", err);
-        setError("Não foi possível carregar o versículo. Verifique o backend.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    buscarVersiculoDia();
-  }, []);
+        // 2. VERIFICAÇÃO RIGOROSA DO DTO
+        if (!data || !data.id || typeof data.id !== 'number' || !data.verso || !data.verso.texto) {
+            console.error("DTO incompleto. Campos esperados: id (number), verso, verso.texto.");
+            throw new Error("O DTO principal retornou dados incompletos ou ID inválido. Consulte o console.");
+        }
 
-  const formatarReferencia = (v: Verso): string => {
-    if (!v.livro?.nome || !v.capitulo || !v.versiculo) {
+        setVersiculoDoDia(data);
+        if (typeof data.favorito === 'boolean') {
+            setIsFavorito(data.favorito);
+        }
+
+        console.log(`Carregamento concluído. ID do Registro para PATCH: ${data.id}`);
+        
+      } catch (err) {
+        let errorMessage = `Erro de Conexão ou Formato. Verifique o console.`;
+        if (axios.isAxiosError(err) && err.response) {
+            errorMessage = `Falha HTTP ${err.response.status}. Verifique o CORS ou o status do backend.`;
+        } else if (err instanceof Error) {
+            errorMessage = err.message;
+        }
+        
+        console.error(`Falha ao carregar versículo na rota ${URL_GET_DADOS_COMPLETOS}:`, err);
+        setError(`Não foi possível carregar o versículo. ${errorMessage}`);
+      }
+
+      setIsLoading(false);
+    };
+    buscarVersiculoDia();
+  }, []); 
+
+  // Formata a referência usando os dados aninhados
+  const formatarReferencia = (v: VersiculoDoDiaDTO): string => { 
+    const verso = v.verso;
+    if (!verso?.livro?.nome || !verso?.capitulo || !verso?.versiculo) {
         return "Referência Indefinida";
     }
-    return `${v.livro.nome} ${v.capitulo}:${v.versiculo}`;
+    return `${verso.livro.nome} ${verso.capitulo}:${verso.versiculo}`;
   };
 
   const copiarVersiculo = () => {
-    if (!versiculo) return;
-    const referencia = formatarReferencia(versiculo);
-    const textoCompleto = `"${versiculo.texto}" - ${referencia}`;
+    if (!versiculoDoDia || !versiculoDoDia.verso) return;
+    
+    const referencia = formatarReferencia(versiculoDoDia);
+    const textoCompleto = `"${versiculoDoDia.verso.texto}" - ${referencia}`; 
+    
+    // Uso de document.execCommand('copy') por restrições de iFrame
     const tempInput = document.createElement('textarea');
     tempInput.value = textoCompleto;
     document.body.appendChild(tempInput);
@@ -142,37 +168,66 @@ const Sidebar: React.FC = () => {
     setTimeout(() => setCopyStatus(null), 3000);
   };
 
-  // Função para alternar o status de Favorito (PATCH)
+  // FUNÇÃO PARA ATUALIZAR O FAVORITO (PATCH)
   const toggleFavorito = async () => {
-    // Agora versiculo.id contém o ID primário corrigido (4)
-    if (!versiculo || !versiculo.id || isUpdating) return;
+    // Pegamos o ID PRINCIPAL (para o PATCH) diretamente do DTO carregado
+    const idRegistroDoDia = versiculoDoDia?.id;
+
+    if (!idRegistroDoDia || isUpdating) {
+      if (!idRegistroDoDia) {
+        setCopyStatus('ID de Registro não carregado.');
+        setTimeout(() => setCopyStatus(null), 3000);
+      }
+      return; 
+    }
 
     const newFavoritoStatus = !isFavorito;
-    const idRegistroDoDia = versiculo.id; // USANDO versiculo.id CORRIGIDO (4)
     
     setIsUpdating(true); 
     
     try {
-        // A URL agora usará o ID primário: /api/versiculo-do-dia/4
-        console.log(`Tentando PATCH em: /api/versiculo-do-dia/${idRegistroDoDia}`);
+        // A URL do PATCH usa o ID dinâmico extraído do DTO carregado
+        const patchUrl = `${URL_PATCH_BASE}${idRegistroDoDia}`; 
         
-        const response = await axios.patch(`/api/versiculo-do-dia/${idRegistroDoDia}`, {
-            isFavorito: newFavoritoStatus
+        console.log(`[PATCH] Tentando PATCH na ROTA CORRETA (ID: ${idRegistroDoDia}): ${patchUrl}`);
+        
+        // O payload usa 'isFavorito' como campo
+        const response = await axios.patch<VersiculoDoDiaDTO>(patchUrl, {
+            isFavorito: newFavoritoStatus 
         });
         
         if (response.status >= 200 && response.status < 300) {
-            setIsFavorito(newFavoritoStatus);
-            setVersiculo(prev => prev ? { ...prev, favorito: newFavoritoStatus } : null);
-            setCopyStatus(newFavoritoStatus ? 'Adicionado aos Favoritos!' : 'Removido.');
+            const favoritoFromBackend = response.data?.favorito;
+
+            if (typeof favoritoFromBackend === 'boolean') {
+                setIsFavorito(favoritoFromBackend); 
+                // Atualiza o DTO no estado local
+                setVersiculoDoDia(prev => prev ? { ...prev, favorito: favoritoFromBackend } : null);
+                setCopyStatus(favoritoFromBackend ? 'Adicionado aos Favoritos!' : 'Removido.');
+            } else {
+                // Caso o backend não retorne o DTO completo, atualizamos pelo estado local
+                 setIsFavorito(newFavoritoStatus); 
+                 setVersiculoDoDia(prev => prev ? { ...prev, favorito: newFavoritoStatus } : null);
+                 setCopyStatus(newFavoritoStatus ? 'Adicionado aos Favoritos!' : 'Removido.');
+            }
+        } else {
+            setCopyStatus('Resposta do servidor inesperada no PATCH.');
         }
     } catch (err) {
         console.error("Erro ao atualizar status de favorito:", err);
+        let errorStatusMessage = "Falha ao salvar (erro de rede/config).";
         if (axios.isAxiosError(err) && err.response) {
-            console.error(`Detalhes do Erro ${err.response.status}:`, err.response.data);
-            setCopyStatus(`Erro: ${err.response.status}. Verifique se o ID ${idRegistroDoDia} existe no DB.`);
-        } else {
-            setCopyStatus("Falha ao salvar favorito (erro de rede/config).");
+            const status = err.response.status;
+            // Mensagem mais específica para o 400
+            if (status === 400) {
+                errorStatusMessage = `Erro 400: O payload '{"isFavorito": ${newFavoritoStatus}}' foi rejeitado.`;
+            } else {
+                errorStatusMessage = `Erro ${status}: Verifique se o PATCH está configurado corretamente.`;
+            }
         }
+        
+        setCopyStatus(errorStatusMessage);
+        
     } finally {
         setIsUpdating(false); 
         setTimeout(() => setCopyStatus(null), 3000);
@@ -187,12 +242,14 @@ const Sidebar: React.FC = () => {
         padding: '0', 
         backgroundColor: 'white', 
         minHeight: '100vh', 
-        borderRight: '1px solid #eee' 
+        borderRight: '1px solid #eee',
+        flexShrink: 0
       }}
     >
       
-      {/* Título do Aplicativo - Usa BookIcon */}
+      {/* Título do Aplicativo */}
       <div className="p-3 d-flex align-items-center" style={{ borderBottom: '1px solid #eee' }}>
+        {/* Usando o ícone de Livro Aberto */}
         <BookIcon size={24} color={LAGOINHA_BLUE} className="me-2" />
         <div>
           <h5 className="mb-0" style={{ color: LAGOINHA_BLUE, fontWeight: 'bold' }}>Dicionário Bíblico</h5>
@@ -208,25 +265,25 @@ const Sidebar: React.FC = () => {
         <Card style={verseCardStyle}>
           <Card.Body>
             
-            {/* 1. Mostra o Spinner enquanto isLoading ou isUpdating é true */}
+            {/* Visualização de Status (Carregando / Erro) */}
             {(isLoading || isUpdating) && (
               <div className="text-center">
                 <Spinner animation="border" size="sm" variant="primary" />
-                <p className="mt-2 text-muted small">{isUpdating ? 'Salvando...' : 'Carregando...'}</p>
+                <p className="mt-2 text-muted small">{isUpdating ? 'Salvando...' : 'Carregando Versículo...'}</p>
               </div>
             )}
 
-            {/* 2. Mostra o erro se houver um */}
-            {error && (
+            {error && !isLoading && (
               <div className="text-danger small text-center">
-                {error}
+                <p>{error}</p>
+                <p className="small">Verifique a rota: <code>{URL_GET_DADOS_COMPLETOS}</code></p>
               </div>
             )}
-
-            {versiculo && (
+            
+            {/* O Versículo em si */}
+            {!isLoading && versiculoDoDia && versiculoDoDia.verso && versiculoDoDia.id ? (
               <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
                 
-                {/* 3. Ícone de Copiar e Status de Cópia - Usa ClipboardIcon */}
                 <div style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                   {copyStatus && (
                     <small style={{ color: LAGOINHA_BLUE, marginRight: '10px' }}>{copyStatus}</small>
@@ -238,10 +295,8 @@ const Sidebar: React.FC = () => {
                   />
                 </div>
                 
-                {/* 4. Coração Clicável e Texto do Versículo */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '10px' }}>
                   
-                  {/* Coração Clicável - Usa HeartIcon */}
                   <span 
                     style={{ 
                         color: LAGOINHA_BLUE, 
@@ -261,22 +316,21 @@ const Sidebar: React.FC = () => {
                     />
                   </span>
                   
-                  {/* Texto do Versículo */}
                   <em style={{ lineHeight: '1.4', color: '#333', fontSize: '1.1rem', flexGrow: 1 }}> 
-                    "{versiculo.texto}"
+                    "{versiculoDoDia.verso.texto}"
                   </em>
                 </div>
 
-                {/* 5. Referência com a mesma cor do coração (azul) */}
                 <strong style={{ color: LAGOINHA_BLUE, display: 'block', marginTop: '5px', alignSelf: 'flex-end' }}>
-                  {formatarReferencia(versiculo)} 
+                  {formatarReferencia(versiculoDoDia)} 
                 </strong>
-              </div>
-            )}
 
-            {/* 6. Caso raro: não carregou, sem erro, e sem dados */}
-            {!isLoading && !error && !versiculo && (
-              <p className="text-muted small text-center">Nenhum versículo disponível.</p>
+              </div>
+            ) : (
+                // Mensagem padrão caso não haja erro, mas o DTO não foi carregado
+                !isLoading && !error && (
+                    <p className="text-muted small text-center">Nenhum versículo disponível.</p>
+                )
             )}
             
           </Card.Body>
