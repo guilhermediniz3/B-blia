@@ -15,6 +15,7 @@ public class VersiculoDoDia {
     @Column(name = "data_selecao", nullable = false)
     @NotNull
     private LocalDate dataSelecao;
+    private Boolean favorito;
     @ManyToOne
     @JoinColumn(name = "id_verso", nullable = false)
     @NotNull
@@ -36,12 +37,15 @@ public class VersiculoDoDia {
     public void setVerso(Verso verso) {
         this.verso = verso;
     }
-    public @NotNull LocalDate getDataSelecao() {
+    public LocalDate getDataSelecao() {
         return dataSelecao;
     }
 
-    public void setDataSelecao(@NotNull LocalDate dataSelecao) {
+    public void setDataSelecao(LocalDate dataSelecao) {
         this.dataSelecao = dataSelecao;
     }
+
+
+
 
 }

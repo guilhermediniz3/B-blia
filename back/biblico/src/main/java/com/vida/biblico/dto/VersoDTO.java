@@ -8,7 +8,7 @@ public class VersoDTO {
     private Integer capitulo;
     private Integer versiculo;
     private String texto;
-
+    private Boolean favorito;
 
 
 
@@ -22,6 +22,7 @@ public class VersoDTO {
         this.capitulo = verso.getCapitulo();
         this.versiculo = verso.getVersiculo();
         this.texto = verso.getTexto();
+        this.favorito = verso.getFavorito();
     }
 
     public Long getId() {
@@ -62,5 +63,13 @@ public class VersoDTO {
 
     public void setTexto(String texto) {
         this.texto = texto;
+    }
+
+    public Boolean getFavorito() {
+        return favorito;
+    }
+
+    public void setFavorito(Boolean favorito) {
+        this.favorito = favorito;
     }
 }

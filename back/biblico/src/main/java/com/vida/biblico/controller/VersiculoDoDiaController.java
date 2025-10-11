@@ -22,4 +22,5 @@ public class VersiculoDoDiaController {
         Verso verso = service.getVersiculoDoDia();
         return ResponseEntity.ok(verso);
     }
+
 }

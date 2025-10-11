@@ -32,7 +32,8 @@ public class  Verso {
 
     @Column(name = "testamento") // este campo pode ser redundante pois já está no livro->testamento
     private String testamento;
-
+    @Column(name = "favorito", nullable = false)
+    private Boolean favorito;
     // Getters e setters
     public Long getId() {
         return id;
@@ -81,5 +82,13 @@ public class  Verso {
 
     public void setTestamento(String testamento) {
         this.testamento = testamento;
+    }
+
+    public Boolean getFavorito() {
+        return favorito;
+    }
+
+    public void setFavorito(Boolean favorito) {
+        this.favorito = favorito;
     }
 }
