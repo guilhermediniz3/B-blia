@@ -9,17 +9,16 @@ public class VersiculoDoDiaDTO {
     private Long id;
     private LocalDate dataSelecao;
     private Verso verso;
-
+    private Boolean favorito; // Novo campo no DTO
 
     public VersiculoDoDiaDTO(){
-
     };
 
     public VersiculoDoDiaDTO(VersiculoDoDia versiculoDia){
         this.id = versiculoDia.getId();
         this.dataSelecao = versiculoDia.getDataSelecao();
         this.verso = versiculoDia.getVerso();
-
+        this.favorito = versiculoDia.getFavorito(); // Inicializa o novo campo
     }
 
     public Verso getVerso() {
@@ -46,4 +45,12 @@ public class VersiculoDoDiaDTO {
         this.id = id;
     }
 
+    // Getter e Setter para favorito
+    public Boolean getFavorito() {
+        return favorito;
+    }
+
+    public void setFavorito(Boolean favorito) {
+        this.favorito = favorito;
+    }
 }

@@ -12,14 +12,21 @@ public class VersiculoDoDia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name = "data_selecao", nullable = false)
     @NotNull
     private LocalDate dataSelecao;
-    private Boolean favorito;
+
+    // Novo campo para rastrear se foi marcado como favorito
+    private Boolean favorito = false;
+
     @ManyToOne
     @JoinColumn(name = "id_verso", nullable = false)
     @NotNull
     private Verso verso;
+
+    // Construtor padrão
+    public VersiculoDoDia() {}
 
     // Getters e setters
     public Long getId() {
@@ -37,6 +44,7 @@ public class VersiculoDoDia {
     public void setVerso(Verso verso) {
         this.verso = verso;
     }
+
     public LocalDate getDataSelecao() {
         return dataSelecao;
     }
@@ -45,7 +53,13 @@ public class VersiculoDoDia {
         this.dataSelecao = dataSelecao;
     }
 
+    // Getter e Setter para 'favorito'
+    public Boolean getFavorito() {
+        // Garante que não retorne null para a interface
+        return favorito != null ? favorito : false;
+    }
 
-
-
+    public void setFavorito(Boolean favorito) {
+        this.favorito = favorito;
+    }
 }

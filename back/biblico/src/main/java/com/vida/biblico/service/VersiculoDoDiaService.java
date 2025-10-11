@@ -104,4 +104,19 @@ public class VersiculoDoDiaService {
 
         return vddNovo.getVerso();
     }
+
+    @Transactional
+    public VersiculoDoDia atualizarStatusFavorito(Long id, Boolean isFavorito) {
+
+
+
+        VersiculoDoDia versiculo = versiculoDoDiaRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Registro de Versículo do Dia não encontrado para o id_verso: " + id));
+
+
+        versiculo.setFavorito(isFavorito);
+
+
+        return versiculoDoDiaRepository.save(versiculo);
+    }
 }

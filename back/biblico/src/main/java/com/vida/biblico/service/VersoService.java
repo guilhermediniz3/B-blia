@@ -42,14 +42,10 @@ public class VersoService {
         Verso verso = versoRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Verso não encontrado com ID: " + id));
 
-        //  APLICA A MUDANÇA (A linha que estava faltando)
         verso.setFavorito(favorito);
-        // Note: 'favorito' é o valor 'true' que veio do  RequestParam.
 
-        //  SALVA NO BANCO (Persiste a mudança)
         Verso versoAtualizado = versoRepository.save(verso);
 
-        //  CONVERTE E RETORNA
         return new VersoDTO(versoAtualizado);
     }
 
