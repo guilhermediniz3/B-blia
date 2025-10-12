@@ -2,6 +2,7 @@ package com.vida.biblico.service;
 
 import com.vida.biblico.dto.VersoDTO;
 import com.vida.biblico.entity.Verso;
+import com.vida.biblico.exception.BusinessException;
 import com.vida.biblico.repository.VersoRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class VersoService {
 
     public VersoDTO getVersoById(Long id) {
        Verso verso = versoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Verso não encontrado"));
+                .orElseThrow(() -> new BusinessException("Verso não encontrado"));
        return new VersoDTO(verso);
     }
 
@@ -40,7 +41,7 @@ public class VersoService {
     public VersoDTO patchFavorito(Long id, Boolean favorito) {
 
         Verso verso = versoRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Verso não encontrado com ID: " + id));
+                .orElseThrow(() -> new BusinessException("Verso não encontrado com ID: " + id));
 
         verso.setFavorito(favorito);
 

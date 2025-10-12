@@ -3,17 +3,15 @@ package com.vida.biblico.service;
 import com.vida.biblico.dto.VersiculoDoDiaDTO;
 import com.vida.biblico.entity.Verso;
 import com.vida.biblico.entity.VersiculoDoDia;
-import com.vida.biblico.exception.ResourceNotFoundException;
+import com.vida.biblico.exception.BusinessException;
 import com.vida.biblico.repository.VersoRepository;
 import com.vida.biblico.repository.VersiculoDoDiaRepository;
-
-import jakarta.transaction.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.NoSuchElementException;
-import java.util.Optional; // Importação necessária para Optional
+import java.util.Optional;
 
 @Service
 public class VersiculoDoDiaService {
@@ -72,10 +70,6 @@ public class VersiculoDoDiaService {
         }
     }
 
-    /**
-     * MÉTODO DE BUSCA: Retorna o Verso do Dia para o Controller.
-     * Garante que o Verso do Dia seja definido, mesmo que o agendador não tenha rodado.
-     */
     @Transactional
     public Verso getVersiculoDoDia() {
         LocalDate hoje = LocalDate.now();
@@ -89,44 +83,42 @@ public class VersiculoDoDiaService {
         }
 
         // 2. Se não existe (servidor ligado após 00:44:00 ou é a primeira requisição do dia):
-
-        // Chama a lógica de seleção manual/agendada.
-        // Essa função irá criar o registro se ele ainda não existir.
         selecionarNovoVersiculoDoDia();
 
         // 3. Tenta buscar novamente após a execução da lógica de seleção
         VersiculoDoDia vddNovo = versiculoDoDiaRepository.findByDataSelecao(hoje)
-                .orElse(null);
-
-        // Verifica se a seleção falhou (provavelmente porque a tabela Verso está vazia)
-        if (vddNovo == null) {
-            throw new RuntimeException("Falha ao definir o Versículo do Dia. A tabela Verso deve estar vazia ou a lógica de seleção falhou.");
-        }
+                .orElseThrow(() -> new BusinessException("Falha ao definir o Versículo do Dia. A tabela Verso deve estar vazia ou a lógica de seleção falhou."));
 
         return vddNovo.getVerso();
     }
 
     @Transactional
     public VersiculoDoDia atualizarStatusFavorito(Long id, Boolean isFavorito) {
-
-
-
         VersiculoDoDia versiculo = versiculoDoDiaRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Registro de Versículo do Dia não encontrado para o id_verso: " + id));
-
+                .orElseThrow(() -> new BusinessException("Registro de Versículo do Dia não encontrado para o id: " + id));
 
         versiculo.setFavorito(isFavorito);
-
-
         return versiculoDoDiaRepository.save(versiculo);
     }
 
-
     public VersiculoDoDiaDTO getUltimoVersiculo() {
         VersiculoDoDia ultimo = versiculoDoDiaRepository.findTopByOrderByIdDesc()
-                .orElseThrow(() -> new ResourceNotFoundException("Nenhum versículo encontrado."));
+                .orElseThrow(() -> new BusinessException("Nenhum versículo encontrado."));
         return new VersiculoDoDiaDTO(ultimo);
     }
 
+    public VersiculoDoDiaDTO PostVersiculoDia(VersiculoDoDiaDTO versiculoDTO) {
+        LocalDate dataAtual = LocalDate.now();
+        if(versiculoDoDiaRepository.existsByDataSelecao(dataAtual)) {
+            throw new BusinessException("Já existe um versículo do dia para a data atual: " + dataAtual);
+        }
 
- }
+        VersiculoDoDia versiculoDoDia = new VersiculoDoDia();
+        versiculoDoDia.setDataSelecao(dataAtual);
+        versiculoDoDia.setVerso(versiculoDTO.getVerso());
+        versiculoDoDia.setFavorito(versiculoDTO.getFavorito());
+
+        VersiculoDoDia savedVersiculo = versiculoDoDiaRepository.save(versiculoDoDia);
+        return new VersiculoDoDiaDTO(savedVersiculo);
+    }
+}

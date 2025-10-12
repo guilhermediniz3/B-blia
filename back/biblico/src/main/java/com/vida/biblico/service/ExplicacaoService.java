@@ -6,13 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vida.biblico.dto.ExplicacaoDTO;
 import com.vida.biblico.entity.Explicacao;
 import com.vida.biblico.entity.Verso;
+import com.vida.biblico.exception.BusinessException;
 import com.vida.biblico.repository.ExplicacaoRepository;
 import com.vida.biblico.repository.VersoRepository;
-
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
@@ -50,7 +49,7 @@ public class ExplicacaoService {
     public ExplicacaoDTO gerarEGuardarExplicacao(Long versoId) {
         // 1. Encontra o Verso no banco de dados.
         Verso verso = versoRepository.findById(versoId)
-                .orElseThrow(() -> new RuntimeException("Verso não encontrado"));
+                .orElseThrow(() -> new BusinessException("Verso não encontrado com ID: " + versoId));
 
         // 2. LÓGICA DE CACHE: Verifica se já existe uma explicação para este Verso.
         List<Explicacao> explicacoesExistentes = explicacaoRepository.findByVersoOrderByCriadoEmDesc(verso);
@@ -109,7 +108,7 @@ public class ExplicacaoService {
 
     public List<ExplicacaoDTO> listarExplicacoesDoVerso(Long versoId) {
         Verso v = versoRepository.findById(versoId)
-                .orElseThrow(() -> new RuntimeException("Verso não encontrado"));
+                .orElseThrow(() -> new BusinessException("Verso não encontrado com ID: " + versoId));
 
         return explicacaoRepository.findByVersoOrderByCriadoEmDesc(v)
                 .stream()
