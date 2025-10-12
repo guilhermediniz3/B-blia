@@ -19,5 +19,4 @@ public interface VersiculoDoDiaRepository extends JpaRepository<VersiculoDoDia, 
 
     Optional<VersiculoDoDia> findTopByOrderByIdDesc();
 
-
 }
