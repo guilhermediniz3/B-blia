@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef  } from 'react';
 import { Container, Card, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 
@@ -33,7 +33,7 @@ const LAGOINHA_BLUE = '#42a5f5';
 const URL_GET_DADOS_COMPLETOS = `/api/versiculo-do-dia/ultimo`;
 // Endpoint base para o PATCH (precisa do ID anexado)
 const URL_PATCH_BASE = `/api/versiculo-do-dia/`; 
-
+const URL_POST_CRIAR_VERSICULO = `/api/versiculo-do-dia`; // NOVO ENDPOINT
 const verseCardStyle: React.CSSProperties = {
  backgroundColor: 'white',
  borderLeft: `5px solid ${LAGOINHA_BLUE}`, 
@@ -79,6 +79,10 @@ fill={isFilled ? color : 'none'}
 );
 
 
+
+
+
+
 // -----------------------------------------------------------
 // 4. Componente Sidebar
 // -----------------------------------------------------------
@@ -89,6 +93,37 @@ const Sidebar: React.FC = () => {
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [isFavorito, setIsFavorito] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+
+
+  
+const postExecutado = useRef(false);
+
+useEffect(() => {
+  const criarVersiculoDoDiaNoRefresh = async (): Promise<void> => {
+    if (postExecutado.current) return;
+    postExecutado.current = true;
+    
+    try {
+      const payload = {
+        favorito: false,
+        verso: { id: 1 }
+      };
+      
+      await axios.post(URL_POST_CRIAR_VERSICULO, payload);
+      
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) return;
+      throw error;
+    }
+  };
+
+  criarVersiculoDoDiaNoRefresh();
+}, []);
+
+  
+
+
 
   // EFEITO: Busca todos os dados em uma única chamada
   useEffect(() => {
