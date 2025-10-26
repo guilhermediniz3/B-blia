@@ -107,6 +107,11 @@ public class VersiculoDoDiaService {
         return new VersiculoDoDiaDTO(ultimo);
     }
 
+
+
+
+
+
     public VersiculoDoDiaDTO PostVersiculoDia(VersiculoDoDiaDTO versiculoDTO) {
         LocalDate dataAtual = LocalDate.now();
         if(versiculoDoDiaRepository.existsByDataSelecao(dataAtual)) {
@@ -115,7 +120,14 @@ public class VersiculoDoDiaService {
 
         VersiculoDoDia versiculoDoDia = new VersiculoDoDia();
         versiculoDoDia.setDataSelecao(dataAtual);
-        versiculoDoDia.setVerso(versiculoDTO.getVerso());
+
+
+        Long maxId = versoRepository.findMaxId();
+        long randomId = (long) (Math.random() * maxId) + 1;
+        Verso versoAleatorio = versoRepository.findById(randomId)
+                .orElseThrow(() -> new BusinessException("Verso aleatório não encontrado"));
+
+        versiculoDoDia.setVerso(versoAleatorio);
         versiculoDoDia.setFavorito(versiculoDTO.getFavorito());
 
         VersiculoDoDia savedVersiculo = versiculoDoDiaRepository.save(versiculoDoDia);

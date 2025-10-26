@@ -9,7 +9,7 @@ public class VersoDTO {
     private Integer versiculo;
     private String texto;
     private Boolean favorito;
-
+    private String testamento;
 
 
     public VersoDTO() {
@@ -23,6 +23,14 @@ public class VersoDTO {
         this.versiculo = verso.getVersiculo();
         this.texto = verso.getTexto();
         this.favorito = verso.getFavorito();
+        this.testamento = verso.getTestamento();
+    }
+    public String getTestamento() {
+        return testamento;
+    }
+
+    public void setTestamento(String testamento) {
+        this.testamento = testamento;
     }
 
     public Long getId() {

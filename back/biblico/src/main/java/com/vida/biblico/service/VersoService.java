@@ -6,6 +6,9 @@ import com.vida.biblico.exception.BusinessException;
 import com.vida.biblico.repository.VersoRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,6 +52,28 @@ public class VersoService {
 
         return new VersoDTO(versoAtualizado);
     }
+
+    // 🔥 MÉTODO 1: Buscar TODOS
+    public Page<VersoDTO> getAllVersos(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return versoRepository.findAll(pageable).map(VersoDTO::new);
+    }
+
+    // 🔥 MÉTODO 2: Buscar COM filtros
+    public Page<VersoDTO> buscarVersosComFiltros(String texto, String livro, String testamento, Integer capitulo, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return versoRepository.buscarVersos(texto, livro, testamento, capitulo, pageable)
+                .map(VersoDTO::new);
+    }
+
+
+
+
+
+
+
+
+
 
 
 
