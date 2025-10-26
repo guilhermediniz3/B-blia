@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef  } from 'react';
 import { Container, Card, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 
@@ -33,18 +33,18 @@ const LAGOINHA_BLUE = '#42a5f5';
 const URL_GET_DADOS_COMPLETOS = `/api/versiculo-do-dia/ultimo`;
 // Endpoint base para o PATCH (precisa do ID anexado)
 const URL_PATCH_BASE = `/api/versiculo-do-dia/`; 
-
+const URL_POST_CRIAR_VERSICULO = `/api/versiculo-do-dia`; // NOVO ENDPOINT
 const verseCardStyle: React.CSSProperties = {
-  backgroundColor: 'white',
-  borderLeft: `5px solid ${LAGOINHA_BLUE}`, 
-  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
+ backgroundColor: 'white',
+ borderLeft: `5px solid ${LAGOINHA_BLUE}`, 
+ boxShadow: '0 2px 4px rgba(0,0,0,0.05)', 
 };
 
 // -----------------------------------------------------------
 // 3. Componentes SVG NATIVOS
 // -----------------------------------------------------------
 
-// NOVO ÍCONE: Livro Aberto com marcador de página (Book Open, conforme solicitado)
+// NOVO ÍCONE: Livro Aberto com marcador de página (Book Open)
 const BookIcon = ({ size = 24, color = 'currentColor', className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -53,42 +53,77 @@ const BookIcon = ({ size = 24, color = 'currentColor', className = '' }) => (
 );
 
 const ClipboardIcon = ({ size = 16, color = 'currentColor', onClick, style }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" onClick={onClick} style={{...style, cursor: 'pointer'}}>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-    </svg>
+ <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" onClick={onClick} style={{...style, cursor: 'pointer'}}>
+ <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+ <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+</svg>
 );
 
 const HeartIcon = ({ size = 18, isFilled = false, color = 'currentColor', onClick, title, style }) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width={size} 
-        height={size} 
-        viewBox="0 0 24 24" 
-        fill={isFilled ? color : 'none'} 
-        stroke={color} 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        onClick={onClick}
-        title={title}
-        style={{...style, cursor: 'pointer', transition: 'color 0.2s' }}
-    >
-        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.87 0-3.6 1.05-4.5 2.5a5.5 5.5 0 0 0-9 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
-    </svg>
+<svg 
+ xmlns="http://www.w3.org/2000/svg" 
+ width={size} 
+ height={size} 
+viewBox="0 0 24 24" 
+fill={isFilled ? color : 'none'} 
+ stroke={color} 
+ strokeWidth="2" 
+ strokeLinecap="round" 
+ strokeLinejoin="round" 
+ onClick={onClick}
+ title={title}
+ style={{...style, cursor: 'pointer', transition: 'color 0.2s' }}
+ >
+ <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.87 0-3.6 1.05-4.5 2.5a5.5 5.5 0 0 0-9 5.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
+ </svg>
 );
+
+
+
+
 
 
 // -----------------------------------------------------------
 // 4. Componente Sidebar
 // -----------------------------------------------------------
 const Sidebar: React.FC = () => {
-  const [versiculoDoDia, setVersiculoDoDia] = useState<VersiculoDoDiaDTO | null>(null); 
+ const [versiculoDoDia, setVersiculoDoDia] = useState<VersiculoDoDiaDTO | null>(null); 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [isFavorito, setIsFavorito] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+
+
+  
+const postExecutado = useRef(false);
+
+useEffect(() => {
+  const criarVersiculoDoDiaNoRefresh = async (): Promise<void> => {
+    if (postExecutado.current) return;
+    postExecutado.current = true;
+    
+    try {
+      const payload = {
+        favorito: false,
+        verso: { id: 1 }
+      };
+      
+      await axios.post(URL_POST_CRIAR_VERSICULO, payload);
+      
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) return;
+      throw error;
+    }
+  };
+
+  criarVersiculoDoDiaNoRefresh();
+}, []);
+
+  
+
+
 
   // EFEITO: Busca todos os dados em uma única chamada
   useEffect(() => {
@@ -130,7 +165,7 @@ const Sidebar: React.FC = () => {
         setError(`Não foi possível carregar o versículo. ${errorMessage}`);
       }
 
-      setIsLoading(false);
+       setIsLoading(false);
     };
     buscarVersiculoDia();
   }, []); 
