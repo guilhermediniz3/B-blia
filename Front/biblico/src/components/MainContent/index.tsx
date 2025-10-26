@@ -9,10 +9,12 @@ import {
   Card,
   Badge,
   Spinner,
-  Pagination
+  Pagination,
+  Modal
 } from "react-bootstrap";
 import Sidebar from "../Sidebar";
 
+// Tipos
 interface Versiculo {
   id: number;
   livro: string;
@@ -33,7 +35,17 @@ interface PageResponse {
   last: boolean;
 }
 
+interface Explicacao {
+  versiculoTexto: string;
+  contextoHistorico: string;
+  significadoEspiritual: string;
+  aplicacaoPratica: string;
+  reflexaoPessoal: string;
+}
+
+// -----------------------------------------------------
 const Content: React.FC = () => {
+  // Estados principais
   const [searchText, setSearchText] = useState("");
   const [livro, setLivro] = useState("Todos");
   const [testamento, setTestamento] = useState("Ambos");
@@ -45,6 +57,12 @@ const Content: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  // Estados do modal
+  const [showModal, setShowModal] = useState(false);
+  const [explicacao, setExplicacao] = useState<Explicacao | null>(null);
+  const [loadingExplicacao, setLoadingExplicacao] = useState(false);
+  const [versoSelecionado, setVersoSelecionado] = useState<number | null>(null);
+
   // 🔥 CARREGA TODOS OS REGISTROS AO INICIAR
   useEffect(() => {
     carregarTodosVersiculos();
@@ -54,9 +72,10 @@ const Content: React.FC = () => {
   const carregarTodosVersiculos = async (page: number = 0) => {
     setLoading(true);
     try {
-      const response = await axios.get<PageResponse>("http://localhost:8081/versos/todos", {
-        params: { page: page, size: pageSize }
-      });
+      const response = await axios.get<PageResponse>(
+        "http://localhost:8081/versos/todos",
+        { params: { page: page, size: pageSize } }
+      );
       setVersiculos(response.data.content);
       setTotalElements(response.data.totalElements);
       setTotalPages(response.data.totalPages);
@@ -74,25 +93,22 @@ const Content: React.FC = () => {
     try {
       const params: any = { page: page, size: pageSize };
 
-      // 🔥 FILTROS CORRETOS - Só adiciona se tiver valor
-      if (searchText.trim() !== '') params.texto = searchText;
+      if (searchText.trim() !== "") params.texto = searchText;
       if (livro !== "Todos") params.livro = livro;
       if (testamento !== "Ambos") {
         params.testamento = testamento === "Antigo Testamento" ? "1" : "2";
       }
-      if (capitulo && capitulo !== '') params.capitulo = parseInt(capitulo);
+      if (capitulo && capitulo !== "") params.capitulo = parseInt(capitulo);
 
-      console.log("🔍 Buscando com filtros:", params);
+      const response = await axios.get<PageResponse>(
+        "http://localhost:8081/versos/buscar",
+        { params: params }
+      );
 
-      const response = await axios.get<PageResponse>("http://localhost:8081/versos/buscar", {
-        params: params
-      });
-      
       setVersiculos(response.data.content);
       setTotalElements(response.data.totalElements);
       setTotalPages(response.data.totalPages);
       setCurrentPage(response.data.number);
-      
     } catch (error) {
       console.error("Erro ao buscar versículos:", error);
     } finally {
@@ -101,19 +117,15 @@ const Content: React.FC = () => {
   };
 
   const handleSearch = async (page: number = 0) => {
-    // 🔥 LÓGICA INTELIGENTE: Se tem algum filtro ativo, busca com filtros
-    const temFiltroAtivo = 
-      searchText.trim() !== '' || 
-      livro !== "Todos" || 
-      testamento !== "Ambos" || 
-      (capitulo && capitulo !== '');
-
-    console.log("Tem filtro ativo?", temFiltroAtivo);
+    const temFiltroAtivo =
+      searchText.trim() !== "" ||
+      livro !== "Todos" ||
+      testamento !== "Ambos" ||
+      (capitulo && capitulo !== "");
 
     if (temFiltroAtivo) {
       await buscarComFiltros(page);
     } else {
-      // Se não tem filtros, carrega todos
       await carregarTodosVersiculos(page);
     }
   };
@@ -124,42 +136,69 @@ const Content: React.FC = () => {
     setTestamento("Ambos");
     setCapitulo("");
     setCurrentPage(0);
-    // Recarrega TODOS os registros
     carregarTodosVersiculos(0);
   };
 
-  // 🔥 MÉTODO: Mudar página
+  // Paginação
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
     handleSearch(pageNumber);
   };
 
-  // 🔥 MÉTODO: Mudar tamanho da página
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(0);
     handleSearch(0);
   };
 
+  // 🔥 NOVO MÉTODO: abre modal e carrega explicação
   const handleExplicacao = async (id: number) => {
+    setShowModal(true);
+    setLoadingExplicacao(true);
+    setVersoSelecionado(id);
     try {
-      const response = await axios.get(`http://localhost:8081/versos/${id}/explicacao`);
-      alert("Explicação: " + response.data);
+      const response = await axios.get(
+        `http://localhost:8081/api/versos/${id}/explicacoes`
+      );
+      const lista = response.data;
+      if (lista && lista.length > 0) {
+        setExplicacao(lista[lista.length - 1]);
+      } else {
+        setExplicacao(null);
+      }
     } catch (error) {
       console.error("Erro ao buscar explicação:", error);
-      alert("Erro ao buscar explicação.");
+      setExplicacao(null);
+    } finally {
+      setLoadingExplicacao(false);
     }
   };
 
-  // Função para capturar Enter na busca
+  // 🔥 Gera nova explicação
+  const gerarNovaExplicacao = async () => {
+    if (!versoSelecionado) return;
+    setLoadingExplicacao(true);
+    try {
+      const response = await axios.post(
+        `http://localhost:8081/api/versos/${versoSelecionado}/explicacoes/gerar`
+      );
+      setExplicacao(response.data);
+    } catch (error) {
+      console.error("Erro ao gerar nova explicação:", error);
+    } finally {
+      setLoadingExplicacao(false);
+    }
+  };
+
+  // Captura Enter
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleSearch(0);
     }
   };
 
-  // 🔥 COMPONENTE DE PAGINAÇÃO
+  // Paginação visual
   const renderPagination = () => {
     if (totalPages <= 1) return null;
 
@@ -168,12 +207,10 @@ const Content: React.FC = () => {
     let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
 
-    // Ajusta o início se estiver perto do final
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(0, endPage - maxVisiblePages + 1);
     }
 
-    // Botão Anterior
     items.push(
       <Pagination.Prev
         key="prev"
@@ -182,19 +219,15 @@ const Content: React.FC = () => {
       />
     );
 
-    // Primeira página
     if (startPage > 0) {
       items.push(
         <Pagination.Item key={0} onClick={() => handlePageChange(0)}>
           1
         </Pagination.Item>
       );
-      if (startPage > 1) {
-        items.push(<Pagination.Ellipsis key="start-ellipsis" />);
-      }
+      if (startPage > 1) items.push(<Pagination.Ellipsis key="start-ellipsis" />);
     }
 
-    // Páginas do meio
     for (let page = startPage; page <= endPage; page++) {
       items.push(
         <Pagination.Item
@@ -207,19 +240,19 @@ const Content: React.FC = () => {
       );
     }
 
-    // Última página
     if (endPage < totalPages - 1) {
-      if (endPage < totalPages - 2) {
+      if (endPage < totalPages - 2)
         items.push(<Pagination.Ellipsis key="end-ellipsis" />);
-      }
       items.push(
-        <Pagination.Item key={totalPages - 1} onClick={() => handlePageChange(totalPages - 1)}>
+        <Pagination.Item
+          key={totalPages - 1}
+          onClick={() => handlePageChange(totalPages - 1)}
+        >
           {totalPages}
         </Pagination.Item>
       );
     }
 
-    // Botão Próximo
     items.push(
       <Pagination.Next
         key="next"
@@ -235,15 +268,13 @@ const Content: React.FC = () => {
             Mostrando {versiculos.length} de {totalElements} versículos
           </span>
         </div>
-        
-        <Pagination className="mb-0">
-          {items}
-        </Pagination>
+
+        <Pagination className="mb-0">{items}</Pagination>
 
         <div>
-          <Form.Select 
-            size="sm" 
-            style={{ width: '80px' }}
+          <Form.Select
+            size="sm"
+            style={{ width: "80px" }}
             value={pageSize}
             onChange={(e) => handlePageSizeChange(Number(e.target.value))}
           >
@@ -257,8 +288,11 @@ const Content: React.FC = () => {
     );
   };
 
+  // -----------------------------------------------------
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
+    <div
+      style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa" }}
+    >
       <Sidebar />
 
       <main style={{ flexGrow: 1, padding: "30px", overflowY: "auto" }}>
@@ -347,7 +381,8 @@ const Content: React.FC = () => {
 
         {versiculos.length > 0 && (
           <h5 className="text-secondary mb-3">
-            {totalElements} versículo(s) encontrado(s) - Página {currentPage + 1} de {totalPages}
+            {totalElements} versículo(s) encontrado(s) - Página {currentPage + 1} de{" "}
+            {totalPages}
           </h5>
         )}
 
@@ -356,11 +391,13 @@ const Content: React.FC = () => {
             <Card.Body>
               <Card.Title className="text-primary d-flex justify-content-between align-items-center">
                 {v.livro} {v.capitulo}:{v.versiculo}
-                <Badge 
-                  bg={v.testamento === "1" ? "warning" : "success"} 
+                <Badge
+                  bg={v.testamento === "1" ? "warning" : "success"}
                   text="dark"
                 >
-                  {v.testamento === "1" ? "Antigo Testamento" : "Novo Testamento"}
+                  {v.testamento === "1"
+                    ? "Antigo Testamento"
+                    : "Novo Testamento"}
                 </Badge>
               </Card.Title>
               <Card.Text className="fst-italic">"{v.texto}"</Card.Text>
@@ -391,7 +428,6 @@ const Content: React.FC = () => {
           </Card>
         ))}
 
-        {/* 🔥 PAGINAÇÃO */}
         {renderPagination()}
 
         {!loading && versiculos.length === 0 && (
@@ -400,6 +436,59 @@ const Content: React.FC = () => {
           </p>
         )}
       </main>
+
+      {/* 🔥 MODAL DE EXPLICAÇÃO */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered scrollable>
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title>Explicação do Versículo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {loadingExplicacao ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-3">Carregando explicação...</p>
+            </div>
+          ) : explicacao ? (
+            <>
+              <blockquote className="blockquote text-center text-muted mb-4">
+                “{explicacao.versiculoTexto}”
+              </blockquote>
+
+              <div className="p-3 bg-light rounded mb-3 border-start border-3 border-primary">
+                <h5 className="text-primary">📜 Contexto Histórico</h5>
+                <p>{explicacao.contextoHistorico}</p>
+              </div>
+
+              <div className="p-3 bg-light rounded mb-3 border-start border-3 border-purple">
+                <h5 style={{ color: "#6f42c1" }}>💭 Significado Espiritual</h5>
+                <p>{explicacao.significadoEspiritual}</p>
+              </div>
+
+              <div className="p-3 bg-light rounded mb-3 border-start border-3 border-success">
+                <h5 className="text-success">🌿 Aplicação Prática</h5>
+                <p>{explicacao.aplicacaoPratica}</p>
+              </div>
+
+              <div className="p-3 bg-light rounded border-start border-3 border-warning">
+                <h5 className="text-warning">💡 Reflexão Pessoal</h5>
+                <p>{explicacao.reflexaoPessoal}</p>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted text-center">
+              Nenhuma explicação disponível ainda.
+            </p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Fechar
+          </Button>
+          <Button variant="primary" onClick={gerarNovaExplicacao}>
+            Gerar Nova Explicação
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
