@@ -224,6 +224,13 @@ const Content: React.FC = () => {
     }
   };
 
+  // 🔥 NOVA FUNÇÃO: Manipula o envio do formulário (Enter)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Impede o recarregamento da página
+    handleSearch(0); // Inicia a pesquisa
+  };
+
+
   const renderPagination = () => {
     if (totalPages <= 1) return null;
     const items = [];
@@ -295,28 +302,19 @@ const Content: React.FC = () => {
   return (
     <Container fluid className="p-0">
       <Row className="g-0">
-        {/*
-          🔥 ALTERAÇÃO 1: RESPONSIVIDADE DO SIDEBAR
-          - Removido `xs={12}`: O sidebar não deve ocupar 12 colunas em mobile.
-          - Adicionado `d-none d-md-block`: Oculta o sidebar em telas pequenas (xs, sm) e mostra a partir de md.
-            Isso garante que ele não crie uma "faixa branca gigante" no mobile/telas menores.
-        */}
+        {/* SIDEBAR COL */}
         <Col md={3} lg={2} className="bg-light border-end d-none d-md-block">
-          {/* Removido o sticky-top que pode causar problemas de altura */}
           <div className="p-3">
             <Sidebar />
           </div>
         </Col>
 
-        {/*
-          🔥 ALTERAÇÃO 2: COLUNA DE CONTEÚDO
-          - xs={12}: Garante que o conteúdo ocupe 100% da tela em mobile (onde o sidebar está oculto).
-          - md={9} lg={10}: Ocupa o restante do espaço em telas médias e grandes.
-        */}
+        {/* MAIN CONTENT COL */}
         <Col xs={12} md={9} lg={10} className="p-3 p-md-4">
           <h2 style={{ color: LAGOINHA_BLUE }}>Pesquisar Versículos</h2>
           <Card className="shadow-sm mb-4 p-4 border-0">
-            <Form>
+            {/* 🔥 MUDANÇA AQUI: Adicionado o evento onSubmit */}
+            <Form onSubmit={handleSubmit}>
               <Row className="align-items-end g-3">
                 <Col md={4}>
                   <Form.Label>Buscar texto</Form.Label>
@@ -368,7 +366,8 @@ const Content: React.FC = () => {
                   />
                 </Col>
                 <Col xs={12} className="d-flex justify-content-end gap-2 mt-3">
-                  <Button onClick={() => handleSearch(0)} variant="primary">
+                  {/* O type="submit" garante que este botão acione o onSubmit da Form */}
+                  <Button type="submit" variant="primary">
                     Pesquisar
                   </Button>
                   <Button variant="outline-secondary" onClick={handleClear}>
@@ -468,7 +467,7 @@ const Content: React.FC = () => {
         </Col>
       </Row>
 
-      {/* 🔥 MODAL DE EXPLICAÇÃO */}
+      {/* MODAL DE EXPLICAÇÃO */}
       <Modal
         show={showModal}
         onHide={() => setShowModal(false)}
