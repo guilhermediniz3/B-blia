@@ -40,8 +40,9 @@ interface Explicacao {
   reflexaoPessoal: string;
 }
 
-const LAGOINHA_BLUE = "#42a5f5";
-const VERDE_NOVO_TESTAMENTO = "#28a745";
+// Cores definidas
+const LAGOINHA_BLUE = "#42a5f5"; // Azul para o Antigo Testamento e outros elementos
+const VERDE_NOVO_TESTAMENTO = "#00BAB4"; // Cor solicitada para o Novo Testamento
 
 const HeartIcon = ({
   size = 18,
@@ -294,12 +295,24 @@ const Content: React.FC = () => {
   return (
     <Container fluid className="p-0">
       <Row className="g-0">
-        <Col xs={12} md={3} lg={2} className="bg-light border-end">
-          <div className="sticky-top p-3">
+        {/*
+          🔥 ALTERAÇÃO 1: RESPONSIVIDADE DO SIDEBAR
+          - Removido `xs={12}`: O sidebar não deve ocupar 12 colunas em mobile.
+          - Adicionado `d-none d-md-block`: Oculta o sidebar em telas pequenas (xs, sm) e mostra a partir de md.
+            Isso garante que ele não crie uma "faixa branca gigante" no mobile/telas menores.
+        */}
+        <Col md={3} lg={2} className="bg-light border-end d-none d-md-block">
+          {/* Removido o sticky-top que pode causar problemas de altura */}
+          <div className="p-3">
             <Sidebar />
           </div>
         </Col>
 
+        {/*
+          🔥 ALTERAÇÃO 2: COLUNA DE CONTEÚDO
+          - xs={12}: Garante que o conteúdo ocupe 100% da tela em mobile (onde o sidebar está oculto).
+          - md={9} lg={10}: Ocupa o restante do espaço em telas médias e grandes.
+        */}
         <Col xs={12} md={9} lg={10} className="p-3 p-md-4">
           <h2 style={{ color: LAGOINHA_BLUE }}>Pesquisar Versículos</h2>
           <Card className="shadow-sm mb-4 p-4 border-0">
@@ -372,8 +385,27 @@ const Content: React.FC = () => {
             </div>
           ) : (
             versiculos.map((v) => (
-              <Card key={v.id} className="mb-3 shadow-sm border-0">
-                <Card.Body>
+              <Card
+                key={v.id}
+                className="mb-3 shadow-sm border-0 rounded-3"
+                style={{
+                  backgroundColor:
+                    v.testamento === "1" ? LAGOINHA_BLUE : VERDE_NOVO_TESTAMENTO,
+                  padding: 0,
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 'calc(0.3rem - 1px)',
+                    padding: '1rem',
+                    marginLeft: '6px',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
                   <Card.Title
                     className="d-flex justify-content-between align-items-center flex-wrap"
                     style={{ color: LAGOINHA_BLUE }}
@@ -388,7 +420,7 @@ const Content: React.FC = () => {
                             : VERDE_NOVO_TESTAMENTO,
                       }}
                     >
-                      {v.testamento === "1" ? "Antigo" : "Novo"}
+                      {v.testamento === "1" ? "Antigo testamento" : "Novo testamento"}
                     </Badge>
                   </Card.Title>
                   <Card.Text>"{v.texto}"</Card.Text>
@@ -427,7 +459,7 @@ const Content: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </Card.Body>
+                </div>
               </Card>
             ))
           )}
